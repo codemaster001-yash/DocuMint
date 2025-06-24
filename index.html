@@ -909,6 +909,316 @@
         .detail-item span {
             color: #6c757d;
         }
+
+        /* Hamburger menu for mobile */
+        .nav-toggle-btn {
+            display: none;
+            /* Hidden by default, only shown on mobile */
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dark);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Sidebar overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 150;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+            display: block;
+        }
+
+        /* ------------------------------------- */
+        /* Mobile Responsiveness       */
+        /* ------------------------------------- */
+
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+                flex-wrap: wrap;
+                /* Allow items to wrap */
+                justify-content: center;
+                /* Center items initially */
+            }
+
+            .logo {
+                width: 100%;
+                /* Make logo full width */
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+
+            .search-bar {
+                order: 3;
+                /* Move search bar to the bottom on mobile */
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+
+            .user-actions {
+                order: 2;
+                /* Move user actions below nav toggle */
+                width: 100%;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .nav-toggle-btn {
+                display: block;
+                /* Show hamburger on mobile */
+                position: absolute;
+                /* Position relative to header */
+                left: 1rem;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                /* Hidden off-screen */
+                height: 100%;
+                z-index: 1001;
+                /* Above modal overlay */
+                box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+                padding-top: 1rem;
+                /* Adjust padding for mobile header */
+            }
+
+            .sidebar.open {
+                left: 0;
+                /* Slide in */
+            }
+
+            .sidebar-section {
+                padding: 0 0.5rem;
+                /* Reduce section padding */
+            }
+
+            .sidebar-section h3 {
+                padding: 0 0.5rem;
+                /* Match section padding */
+            }
+
+            .main-content {
+                flex-direction: column;
+                /* Stack main content vertically */
+            }
+
+            .content-area {
+                padding: 1rem;
+                /* Adjust content area padding */
+            }
+
+            .content-header {
+                flex-direction: column;
+                /* Stack header elements */
+                align-items: flex-start;
+                margin-bottom: 1rem;
+            }
+
+            .content-header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .actions-bar {
+                width: 100%;
+                /* Make action bar full width */
+                flex-wrap: wrap;
+                /* Allow buttons to wrap */
+                justify-content: center;
+                /* Center buttons */
+                gap: 0.5rem;
+                /* Reduce gap between buttons */
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                /* Adjust button padding */
+                font-size: 0.9rem;
+            }
+
+            .view-toggle {
+                order: -1;
+                /* Move view toggle to the start */
+                width: 100%;
+                justify-content: center;
+            }
+
+            .view-toggle button {
+                flex: 1;
+                /* Make view toggle buttons expand */
+            }
+
+            .sort-controls {
+                width: 100%;
+                /* Make sort controls full width */
+                margin-left: 0;
+                justify-content: center;
+            }
+
+            .sort-controls select,
+            .sort-controls button {
+                flex: 1;
+                /* Make sort controls expand */
+            }
+
+            .documents-grid {
+                grid-template-columns: 1fr;
+                /* Single column layout for grid on mobile */
+                gap: 1rem;
+            }
+
+            .document-card {
+                flex-direction: column;
+                /* Ensure cards stack content if needed */
+            }
+
+            .documents-list .document-card {
+                flex-direction: column;
+                /* List items stack content on mobile */
+                align-items: flex-start;
+            }
+
+            .documents-list .document-thumbnail {
+                width: 100%;
+                /* Thumbnail takes full width */
+                height: 120px;
+                /* Smaller thumbnail height */
+                border-radius: 8px 8px 0 0;
+                /* Adjust border radius */
+            }
+
+            .documents-list .document-info {
+                padding: 1rem;
+                /* Adjust padding */
+                width: 100%;
+            }
+
+            .documents-list .card-top-actions {
+                top: 8px;
+                left: 8px;
+                right: 8px;
+                /* Ensure selection checkbox and important toggle are visible */
+            }
+
+            .documents-list .card-bottom {
+                flex-direction: column;
+                /* Stack labels and actions */
+                align-items: flex-start;
+                padding: 0 1rem 1rem;
+                gap: 0.5rem;
+            }
+
+            .documents-list .card-actions {
+                width: 100%;
+                /* Make action buttons full width */
+                justify-content: flex-end;
+                /* Align actions to the right */
+            }
+
+            .documents-list .card-labels {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .modal {
+                max-width: 95%;
+                /* Make modals wider on small screens */
+                margin: 0 10px;
+                /* Add some side margin */
+            }
+
+            .selection-bar {
+                width: 90%;
+                /* Make selection bar wider */
+                padding: 0.8rem 1rem;
+                flex-direction: column;
+                /* Stack info and actions */
+                gap: 0.5rem;
+            }
+
+            .selection-actions {
+                width: 100%;
+                /* Actions take full width */
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+
+            .selection-actions .btn {
+                flex: 1 1 auto;
+                /* Buttons expand to fill space */
+                min-width: 120px;
+                /* Minimum width for buttons */
+            }
+        }
+
+        /* Even smaller mobile screens */
+        @media (max-width: 480px) {
+            header {
+                padding: 0.8rem;
+            }
+
+            .nav-toggle-btn {
+                left: 0.5rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .search-bar input {
+                padding: 0.6rem 1.2rem 0.6rem 2.5rem;
+                font-size: 0.9rem;
+            }
+
+            .search-bar i {
+                left: 1rem;
+            }
+
+            .user-profile {
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+            }
+
+            .content-area {
+                padding: 0.8rem;
+            }
+
+            .documents-grid {
+                gap: 0.8rem;
+            }
+
+            .document-thumbnail {
+                height: 140px;
+                /* Adjust thumbnail size */
+            }
+
+            .card-actions button {
+                width: 28px;
+                height: 28px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -922,7 +1232,7 @@
         // Central application state
         const appState = {
             storageHandle: null, // FileSystemDirectoryHandle for the selected folder
-            documents: [],       // Documents managed by DocuMint (from DocuMint.meta.json)
+            documents: [],       // Documents managed by DocuMint (from docuMint.meta.json)
             filesInFolder: [],   // All files and directories detected in the storage folder
             buckets: [           // Predefined buckets
                 { id: "b1", name: "Medical 2024" },
@@ -992,6 +1302,7 @@
 
                 <div class="app-container" id="appContainer" style="display: none;">
                     <header>
+                        <button class="nav-toggle-btn" id="navToggleBtn"><i class="fas fa-bars"></i></button>
                         <div class="logo"><i class="fas fa-file-shield"></i> &nbsp;DocuMint</div>
                         <div class="search-bar">
                             <i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search documents...">
@@ -999,7 +1310,7 @@
                         <div class="user-actions">
                             <button title="Notifications"><i class="fas fa-bell"></i></button>
                             <button title="Settings"><i class="fas fa-cog"></i></button>
-                            <div class="user-profile">YA</div>
+                            <div class="user-profile">DV</div>
                         </div>
                     </header>
                     <div class="main-content">
@@ -1013,6 +1324,7 @@
                 <div class="modal-overlay" id="detailsModal"></div>
                 <div class="modal-overlay" id="bucketModal"></div>
                 <div class="modal-overlay" id="previewModal"></div> <!-- New Preview Modal Overlay -->
+                <div class="sidebar-overlay" id="sidebarOverlay"></div> <!-- New Sidebar Overlay -->
                 <div class="toast" id="toast"></div>
             `;
 
@@ -1028,8 +1340,10 @@
                 detailsModal: document.getElementById('detailsModal'),
                 bucketModal: document.getElementById('bucketModal'),
                 previewModal: document.getElementById('previewModal'), // New element reference
+                sidebarOverlay: document.getElementById('sidebarOverlay'), // New element reference
                 toast: document.getElementById('toast'),
                 searchInput: document.getElementById('searchInput'),
+                navToggleBtn: document.getElementById('navToggleBtn'), // New element reference
             });
         }
 
@@ -1039,8 +1353,18 @@
         function setupEventListeners() {
             elements.selectStorageBtn.addEventListener('click', selectStorageLocation);
             elements.searchInput.addEventListener('input', () => renderContentArea());
+            elements.navToggleBtn.addEventListener('click', toggleSidebar); // New: Toggle sidebar
+            elements.sidebarOverlay.addEventListener('click', toggleSidebar); // New: Close sidebar on overlay click
             document.body.addEventListener('click', handleGlobalClick);
             // Sort button and direction listeners will be set up when the content area is rendered
+        }
+
+        /**
+         * Toggles the sidebar visibility on mobile.
+         */
+        function toggleSidebar() {
+            elements.sidebar.classList.toggle('open');
+            elements.sidebarOverlay.classList.toggle('active');
         }
 
         /**
@@ -1056,9 +1380,26 @@
             const card = closest('.document-card');
             const docId = card?.dataset.id;
 
+            // Close preview modal if clicking outside it
+            if (elements.previewModal.classList.contains('active') && !closest('.modal')) {
+                closeAllModals();
+                return; // Stop further propagation to prevent other actions
+            }
+
+            // Close sidebar if clicking outside it (only on mobile when open)
+            if (elements.sidebar.classList.contains('open') && !closest('.sidebar') && !closest('.nav-toggle-btn') && window.innerWidth <= 768) {
+                toggleSidebar();
+                // We let the sidebarOverlay listener handle it, but this acts as a fallback for clicks not on overlay
+                // However, the `sidebarOverlay` listener handles this more cleanly. So this block might not be strictly needed if `sidebarOverlay` is always present
+                // and covers the whole screen. Keeping it simple, `sidebarOverlay` takes care of this.
+            }
+
             // Handle sidebar view changes
             if (closest('.sidebar-item')?.dataset.view) {
                 changeView(closest('.sidebar-item').dataset.view);
+                if (window.innerWidth <= 768) { // Close sidebar on mobile after selection
+                    toggleSidebar();
+                }
                 return;
             }
             // Handle document selection checkbox
@@ -1069,7 +1410,7 @@
             // Handle clicking on a document card (toggles selection)
             if (card && !closest('.card-actions button, .important-toggle, .selection-checkbox, .import-file-btn, .preview-btn')) {
                 const cb = card.querySelector('.selection-checkbox');
-                if (cb && !cb.disabled) { // Only toggle if checkbox is not disabled
+                if (cb) { // Do not check for disabled here, enable all checkboxes
                     cb.checked = !cb.checked;
                     toggleSelection(docId, cb.checked);
                 }
@@ -1312,7 +1653,8 @@
          */
         function renderDocCard(doc) {
             const isSelected = appState.selectedDocIds.has(doc.id);
-            const isTrashView = appState.currentView === 'trash';
+            // Checkbox for trash view is now enabled. Logic for trash is handled in functions.
+            // const isTrashView = appState.currentView === 'trash';
             const thumbnail = doc.thumbnail ? `<img src="${doc.thumbnail}" alt="${doc.name}">` : `<i class="fas fa-file-alt file-icon"></i>`;
             const getBucketName = (bucketId) => appState.buckets.find(b => b.id === bucketId)?.name || 'Uncategorized';
 
@@ -1321,8 +1663,8 @@
                     <div class="card-top">
                         <div class="document-thumbnail">${thumbnail}</div>
                         <div class="card-top-actions">
-                            <input type="checkbox" class="selection-checkbox" ${isSelected ? 'checked' : ''} >
-                             <button class="important-toggle ${doc.isImportant ? 'is-important' : ''}" title="Mark as important" ${isTrashView ? 'disabled' : ''}>
+                            <input type="checkbox" class="selection-checkbox" ${isSelected ? 'checked' : ''}>
+                             <button class="important-toggle ${doc.isImportant ? 'is-important' : ''}" title="Mark as important">
                                 <i class="fas fa-star"></i>
                             </button>
                         </div>
@@ -1341,7 +1683,7 @@
                             </div>
                             <div class="card-actions">
                                 <button class="preview-btn" title="Preview"><i class="fas fa-eye"></i></button> <!-- New Preview Button -->
-                                <button class="edit-btn" title="Edit" ${isTrashView ? 'disabled' : ''}><i class="fas fa-edit"></i></button>
+                                <button class="edit-btn" title="Edit" ${appState.currentView === 'trash' ? 'disabled' : ''}><i class="fas fa-edit"></i></button>
                                 <button class="download-btn" title="Download"><i class="fas fa-download"></i></button>
                             </div>
                         </div>
@@ -1524,7 +1866,7 @@
             if (!appState.storageHandle) return;
             try {
                 // Load DocuMint's metadata file
-                const metaFileHandle = await appState.storageHandle.getFileHandle('DocuMint.meta.json').catch(() => null);
+                const metaFileHandle = await appState.storageHandle.getFileHandle('docuMint.meta.json').catch(() => null);
                 if (metaFileHandle) {
                     const file = await metaFileHandle.getFile();
                     const metadata = JSON.parse(await file.text());
@@ -1569,14 +1911,14 @@
 
         /**
          * Saves the current application metadata (documents, buckets, trash)
-         * to the 'DocuMint.meta.json' file in the storage location.
+         * to the 'docuMint.meta.json' file in the storage location.
          */
         async function saveMetadata() {
             if (!appState.storageHandle) return;
             try {
                 // Exclude thumbnail data from saving as it's generated on load
                 const dataToSave = { buckets: appState.buckets, trash: appState.trash, documents: appState.documents.map(({ thumbnail, ...doc }) => doc) };
-                const fileHandle = await appState.storageHandle.getFileHandle('DocuMint.meta.json', { create: true });
+                const fileHandle = await appState.storageHandle.getFileHandle('docuMint.meta.json', { create: true });
                 const writable = await fileHandle.createWritable();
                 await writable.write(JSON.stringify(dataToSave, null, 2));
                 await writable.close();
@@ -1857,7 +2199,7 @@
          * @param {string} docId - The ID of the document to preview.
          */
         function showPreviewModal(docId) {
-            const doc = appState.documents.find(d => d.id === docId);
+            const doc = appState.documents.find(d => d.id === docId) || appState.trash.find(d => d.id === docId); // Also allow preview from trash
             if (!doc) return;
 
             const getBucketName = (bucketId) => appState.buckets.find(b => b.id === bucketId)?.name || 'N/A';
@@ -2216,38 +2558,66 @@
          * Combines selected PDF documents into a single PDF.
          */
         async function combineSelectedPDFs() {
-            const pdfIds = Array.from(appState.selectedDocIds).filter(id => {
-                const doc = appState.documents.find(d => d.id === id);
-                return doc && doc.type === 'application/pdf'; // Only include PDFs
-            });
-
-            if (pdfIds.length < 2) {
-                return showToast("Select at least two PDF files to combine.", "error");
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length < 2) {
+                return showToast("Select at least two files to combine.", "error");
             }
 
-            showToast("Combining PDFs...", "success");
+            showToast("Combining files into PDF...", "success");
             try {
-                const mergedPdf = await PDFDocument.create(); // Create a new empty PDF document
-                for (const id of pdfIds) {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+
+                for (const id of ids) {
                     const doc = appState.documents.find(d => d.id === id);
                     const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
                     const file = await fileHandle.getFile();
-                    const pdfBytes = await file.arrayBuffer();
-                    const pdf = await PDFDocument.load(pdfBytes); // Load each selected PDF
-                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices()); // Copy all pages
-                    copiedPages.forEach(page => mergedPdf.addPage(page)); // Add pages to the new PDF
+                    const fileType = doc.type;
+
+                    if (fileType === 'application/pdf') {
+                        // Merge PDF pages
+                        const pdfBytes = await file.arrayBuffer();
+                        const pdf = await PDFLib.PDFDocument.load(pdfBytes);
+                        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                        copiedPages.forEach(page => mergedPdf.addPage(page));
+                    } else if (fileType.startsWith('image/')) {
+                        // Add image as a new page
+                        const imgBytes = await file.arrayBuffer();
+                        let imgEmbed, dims;
+                        if (fileType === 'image/jpeg' || fileType === 'image/jpg') {
+                            imgEmbed = await mergedPdf.embedJpg(imgBytes);
+                        } else if (fileType === 'image/png') {
+                            imgEmbed = await mergedPdf.embedPng(imgBytes);
+                        } else {
+                            continue; // Skip unsupported image types
+                        }
+                        dims = imgEmbed.scale(1);
+                        const page = mergedPdf.addPage([dims.width, dims.height]);
+                        page.drawImage(imgEmbed, { x: 0, y: 0, width: dims.width, height: dims.height });
+                    } else if (fileType === 'text/plain') {
+                        // Add text as a new page
+                        const text = await file.text();
+                        const page = mergedPdf.addPage([595, 842]); // A4 size
+                        page.drawText(text, {
+                            x: 50,
+                            y: 800,
+                            size: 12,
+                            maxWidth: 495,
+                            lineHeight: 16
+                        });
+                    }
+                    // You can add more file type handlers here if needed
                 }
-                const mergedPdfBytes = await mergedPdf.save(); // Save the combined PDF
+
+                const mergedPdfBytes = await mergedPdf.save();
                 saveAs(new Blob([mergedPdfBytes], { type: 'application/pdf' }), `Combined-${Date.now()}.pdf`);
-                showToast("PDFs combined successfully!", "success");
+                showToast("Files combined into PDF successfully!", "success");
             } catch (e) {
-                showToast("Failed to combine PDFs.", "error");
+                showToast("Failed to combine files.", "error");
                 console.error("Combine PDF error:", e);
             } finally {
                 clearSelection();
             }
         }
-
         /**
          * Compresses selected PDF documents individually.
          */
