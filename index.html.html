@@ -1,0 +1,2344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMint | Corrected & Enhanced</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- PDF-Lib for PDF manipulation (combining, compressing) -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- JSZip for creating ZIP archives -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FileSaver.js for saving generated files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        /* Define CSS custom properties (variables) for consistent theming */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --gray: #e9ecef;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --important: #ffc107;
+            --card-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+            --transition: all 0.3s ease-in-out;
+        }
+
+        /* Universal box-sizing and font reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Body styling */
+        body {
+            background: #f7f9fc;
+            color: var(--dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Main application container layout */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1800px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* Header styling */
+        header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* Logo styling */
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo i {
+            color: var(--primary);
+        }
+
+        /* Search bar styling */
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 2rem;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.8rem 1.5rem 0.8rem 3rem;
+            border-radius: 50px;
+            border: 1px solid var(--gray);
+            background: var(--light);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
+
+        /* User actions (buttons) styling */
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-actions button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--dark);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .user-actions button:hover {
+            background: var(--gray);
+        }
+
+        /* User profile icon styling */
+        .user-profile {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Main content area (sidebar + content-area) */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--gray);
+            padding-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .sidebar-section {
+            padding: 0 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6c757d;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+
+        .sidebar-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .sidebar-item-main {
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-item:hover,
+        .add-bucket-btn:hover {
+            background: var(--gray);
+        }
+
+        .sidebar-item.active {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-item i {
+            margin-right: 1rem;
+            width: 24px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .buckets-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .bucket-actions {
+            display: none;
+            gap: 8px;
+        }
+
+        .sidebar-item:hover .bucket-actions {
+            display: flex;
+        }
+
+        .bucket-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .bucket-actions button:hover {
+            color: var(--primary);
+        }
+
+        .add-bucket-btn {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .add-bucket-btn i {
+            margin-right: 1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Storage info container in sidebar */
+        .storage-info-container {
+            padding: 1rem;
+            background: #f7f9fc;
+            border-radius: 8px;
+            margin: 0 1rem 1.5rem 1rem;
+            font-size: 0.9rem;
+            border: 1px solid var(--gray);
+        }
+
+        .storage-path-label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .storage-path-name {
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 0;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Content area styling */
+        .content-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background: #f7f9fc;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .content-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: var(--gray);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .view-toggle button {
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Generic button styles */
+        .btn {
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .btn:disabled {
+            background-color: var(--gray);
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--gray);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background: var(--gray);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Document grid view */
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Document card styling */
+        .document-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border: 2px solid transparent;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .document-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .document-card.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2);
+        }
+
+        .card-top {
+            position: relative;
+        }
+
+        .document-thumbnail {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #edf2ff, #eef3ff);
+            flex-shrink: 0;
+        }
+
+        .file-icon {
+            font-size: 4rem;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .document-thumbnail img {
+            max-height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .card-top-actions {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 2;
+        }
+
+        .selection-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .important-toggle {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .important-toggle.is-important {
+            color: var(--important);
+        }
+
+        .important-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .document-info {
+            padding: 1rem;
+            flex-grow: 1;
+        }
+
+        .document-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .document-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem 1rem;
+        }
+
+        .card-labels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .card-label {
+            background-color: var(--gray);
+            color: #555;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .card-label.tag {
+            background-color: rgba(114, 9, 183, 0.1);
+            color: var(--secondary);
+        }
+
+        .card-label.bucket {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .card-actions button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gray);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: #555;
+        }
+
+        .card-actions button:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* List View Styles */
+        .documents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .documents-list .document-card {
+            flex-direction: row;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .documents-list .document-thumbnail {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+        }
+
+        .documents-list .document-info {
+            padding: 0 1.5rem;
+            flex-grow: 1;
+        }
+
+        .documents-list .file-icon {
+            font-size: 2.5rem;
+        }
+
+        .documents-list .card-top-actions {
+            top: 8px;
+            left: 8px;
+            right: auto;
+        }
+
+        .documents-list .important-toggle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+
+        .documents-list .card-bottom {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0;
+            width: 100%;
+        }
+
+        .documents-list .card-actions {
+            align-self: center;
+        }
+
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(30, 30, 40, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Modal content */
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* Form control styling (inputs, selects) */
+        .form-control,
+        .currency-selector {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--gray);
+            font-size: 1rem;
+            /* Added inner shadow */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1), inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            /* Keep inner shadow on focus */
+        }
+
+        .bill-amount-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .bill-amount-group .form-control {
+            flex: 1;
+        }
+
+        .currency-selector {
+            flex: 0 0 80px;
+        }
+
+        /* File upload area */
+        .upload-area {
+            border: 2px dashed var(--gray);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .upload-area.highlight {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.03);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        /* Modal footer */
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Empty state message styling */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            color: #ced4da;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Selection bar at the bottom */
+        .selection-bar {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: bottom 0.4s ease-in-out;
+            z-index: 50;
+            gap: 1rem;
+        }
+
+        .selection-bar.active {
+            bottom: 20px;
+        }
+
+        .selection-info {
+            font-weight: 500;
+        }
+
+        .selection-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .selection-actions .btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .selection-actions .btn:hover:not(:disabled) {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .selection-actions .btn-danger {
+            background: var(--danger);
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s ease-in-out;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* Sort dropdown styling */
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: 1rem;
+            /* Adjust spacing as needed */
+        }
+
+        .sort-controls select {
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--gray);
+            font-size: 0.9rem;
+            background-color: white;
+            cursor: pointer;
+            /* Added inner shadow */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sort-controls button {
+            background: var(--gray);
+            border: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--dark);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .sort-controls button:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .detail-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .detail-item label {
+            font-weight: 600;
+            color: var(--dark);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item span {
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app-root"></div>
+
+    <script type="module">
+        // Import PDFDocument from PDFLib library
+        const { PDFDocument } = PDFLib;
+
+        // Central application state
+        const appState = {
+            storageHandle: null, // FileSystemDirectoryHandle for the selected folder
+            documents: [],       // Documents managed by DocuMint (from DocuMint.meta.json)
+            filesInFolder: [],   // All files and directories detected in the storage folder
+            buckets: [           // Predefined buckets
+                { id: "b1", name: "Medical 2024" },
+                { id: "b2", name: "Q1 Expenses" },
+                { id: "b3", name: "Tax Documents" },
+            ],
+            trash: [],           // Documents in trash
+            selectedDocIds: new Set(), // Set of IDs of selected documents
+            currentView: 'dashboard', // Current active view ('dashboard', 'important', 'trash', 'bucket-ID', 'browse-folder')
+            editingDocId: null,  // ID of document being edited in details modal
+            editingBucketId: null, // ID of bucket being edited in bucket modal
+            layout: 'grid',      // Current layout ('grid' or 'list')
+            filter: { type: 'all' }, // Current filter settings
+            sortBy: 'date',      // Field to sort by ('name', 'date', 'size')
+            sortDirection: 'desc' // Sort direction ('asc' or 'desc')
+        };
+
+        // Object to hold references to frequently used DOM elements
+        const elements = {};
+
+        /**
+         * Initializes the application.
+         * Checks for a stored folder handle, attempts to load data,
+         * and displays either the welcome screen or the main app.
+         */
+        async function initApp() {
+            buildAppShell(); // Construct the basic HTML structure
+            setupEventListeners(); // Attach global event listeners
+
+            try {
+                // Attempt to retrieve a previously stored directory handle from IndexedDB
+                const handle = await getStoredHandle();
+                if (handle && await verifyPermission(handle)) {
+                    // If a handle exists and permissions are granted, set it and load data
+                    appState.storageHandle = handle;
+                    elements.appContainer.style.display = 'flex';
+                    elements.welcomeScreen.style.display = 'none';
+                    await loadDataFromStorage();
+                } else {
+                    // Otherwise, show the welcome screen
+                    elements.appContainer.style.display = 'none';
+                    elements.welcomeScreen.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error("Initialization error:", error);
+                // In case of any error during init, default to welcome screen
+                elements.appContainer.style.display = 'none';
+                elements.welcomeScreen.style.display = 'flex';
+            }
+        }
+
+        /**
+         * Constructs the main HTML shell of the application and populates
+         * the 'elements' object with references to key DOM elements.
+         */
+        function buildAppShell() {
+            const root = document.getElementById('app-root');
+            root.innerHTML = `
+                <div class="welcome-screen" id="welcomeScreen" style="display:flex; align-items:center; justify-content:center; height:100vh;">
+                     <div style="text-align:center; background:white; padding: 3rem 4rem; border-radius:16px; box-shadow: var(--card-shadow)">
+                        <i class="fas fa-file-shield" style="font-size:5rem; color:var(--primary)"></i>
+                        <h1 style="font-size:2.5rem; margin:1.5rem 0 1rem;">Welcome to DocuMint</h1>
+                        <p style="color:#6c757d; margin-bottom:2rem;">To begin, please select a folder on your computer to securely store your documents.</p>
+                        <button class="btn btn-primary" id="selectStorageBtn" style="padding: 1rem 2rem; font-size: 1.1rem;"><i class="fas fa-folder-open"></i> Select Storage Folder</button>
+                    </div>
+                </div>
+
+                <div class="app-container" id="appContainer" style="display: none;">
+                    <header>
+                        <div class="logo"><i class="fas fa-file-shield"></i> &nbsp;DocuMint</div>
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search documents...">
+                        </div>
+                        <div class="user-actions">
+                            <button title="Notifications"><i class="fas fa-bell"></i></button>
+                            <button title="Settings"><i class="fas fa-cog"></i></button>
+                            <div class="user-profile">DV</div>
+                        </div>
+                    </header>
+                    <div class="main-content">
+                        <div class="sidebar" id="sidebar"></div>
+                        <div class="content-area" id="contentArea"></div>
+                    </div>
+                </div>
+                
+                <div class="selection-bar" id="selectionBar"></div>
+                <div class="modal-overlay" id="uploadModal"></div>
+                <div class="modal-overlay" id="detailsModal"></div>
+                <div class="modal-overlay" id="bucketModal"></div>
+                <div class="modal-overlay" id="previewModal"></div> <!-- New Preview Modal Overlay -->
+                <div class="toast" id="toast"></div>
+            `;
+
+            // Assign DOM elements to the 'elements' object for easy access
+            Object.assign(elements, {
+                welcomeScreen: document.getElementById('welcomeScreen'),
+                appContainer: document.getElementById('appContainer'),
+                selectStorageBtn: document.getElementById('selectStorageBtn'),
+                sidebar: document.getElementById('sidebar'),
+                contentArea: document.getElementById('contentArea'),
+                selectionBar: document.getElementById('selectionBar'),
+                uploadModal: document.getElementById('uploadModal'),
+                detailsModal: document.getElementById('detailsModal'),
+                bucketModal: document.getElementById('bucketModal'),
+                previewModal: document.getElementById('previewModal'), // New element reference
+                toast: document.getElementById('toast'),
+                searchInput: document.getElementById('searchInput'),
+            });
+        }
+
+        /**
+         * Sets up global event listeners for various interactions.
+         */
+        function setupEventListeners() {
+            elements.selectStorageBtn.addEventListener('click', selectStorageLocation);
+            elements.searchInput.addEventListener('input', () => renderContentArea());
+            document.body.addEventListener('click', handleGlobalClick);
+            // Sort button and direction listeners will be set up when the content area is rendered
+        }
+
+        /**
+         * Handles global click events, delegating to specific functions based on the clicked element.
+         * This improves performance by having fewer event listeners.
+         * @param {Event} e - The click event object.
+         */
+        function handleGlobalClick(e) {
+            const target = e.target;
+            // Helper to find the closest ancestor element matching a selector
+            const closest = (selector) => target.closest(selector);
+
+            const card = closest('.document-card');
+            const docId = card?.dataset.id;
+
+            // Handle sidebar view changes
+            if (closest('.sidebar-item')?.dataset.view) {
+                changeView(closest('.sidebar-item').dataset.view);
+                return;
+            }
+            // Handle document selection checkbox
+            if (target.classList.contains('selection-checkbox')) {
+                toggleSelection(docId, target.checked);
+                return;
+            }
+            // Handle clicking on a document card (toggles selection)
+            if (card && !closest('.card-actions button, .important-toggle, .selection-checkbox, .import-file-btn, .preview-btn')) {
+                const cb = card.querySelector('.selection-checkbox');
+                if (cb && !cb.disabled) { // Only toggle if checkbox is not disabled
+                    cb.checked = !cb.checked;
+                    toggleSelection(docId, cb.checked);
+                }
+                return;
+            }
+
+            // Map of selectors to their corresponding action functions
+            const actions = {
+                '.important-toggle': () => toggleImportant(docId),
+                '.edit-btn': () => showDetailsModal(docId),
+                '.download-btn': () => downloadFile(docId),
+                '.preview-btn': () => showPreviewModal(docId), // Added preview button action
+                '#uploadBtn': showUploadModal,
+                '#addBucketBtn': () => showBucketModal(),
+                '.edit-bucket-btn': () => showBucketModal(closest('.edit-bucket-btn').dataset.id),
+                '.delete-bucket-btn': () => handleDeleteBucket(closest('.delete-bucket-btn').dataset.id),
+                '#emptyTrashBtn': handleEmptyTrash,
+                '#changeStorageBtn': selectStorageLocation,
+                '#selectionDownloadBtn': downloadSelected,
+                '#selectionCombineBtn': combineSelectedPDFs,
+                '#selectionCompressPdfBtn': compressSelectedPDFs,
+                '#selectionCompressBtn': compressSelectedToZip,
+                '#selectionDeleteBtn': deleteSelected,
+                '#selectionRestoreBtn': restoreSelected,
+                '#selectionPermDeleteBtn': permanentlyDeleteSelected,
+                '.close-modal': closeAllModals,
+                '.cancel-btn': closeAllModals,
+                '#saveBucketBtn': handleSaveBucket,
+                '#saveDetailsBtn': handleSaveDetails,
+                '#confirmUploadBtn': handleFileUpload,
+                '#viewGridBtn': () => { appState.layout = 'grid'; renderContentArea(); },
+                '#viewListBtn': () => { appState.layout = 'list'; renderContentArea(); },
+                '#sortBySelect': () => {
+                    appState.sortBy = target.value;
+                    renderContentArea();
+                },
+                '#sortDirectionBtn': () => {
+                    appState.sortDirection = appState.sortDirection === 'asc' ? 'desc' : 'asc';
+                    renderContentArea();
+                },
+                '.import-file-btn': () => importFile(docId, target.dataset.path), // path for untracked files
+            };
+
+            // Execute the corresponding action if a matching element is clicked
+            for (const selector in actions) {
+                if (closest(selector)) {
+                    actions[selector]();
+                    return;
+                }
+            }
+        }
+
+        /**
+         * Renders all major UI components (sidebar, content area, selection bar).
+         */
+        function renderAll() {
+            renderSidebar();
+            renderContentArea();
+            renderSelectionBar();
+        }
+
+        /**
+         * Renders the sidebar content, including navigation items, buckets,
+         * and storage location info.
+         */
+        function renderSidebar() {
+            // Define sidebar sections and their content
+            const sections = [
+                { isStorage: true }, // Special section for storage path
+                { items: [{ view: 'dashboard', icon: 'fa-table-columns', label: 'Dashboard' }, { view: 'important', icon: 'fa-star', label: 'Important' }, { view: 'browse-folder', icon: 'fa-folder', label: 'Files in Folder' }] },
+                { title: 'My Buckets', isBucket: true, items: appState.buckets.map(b => ({ view: `bucket-${b.id}`, icon: 'fa-folder', label: b.name, id: b.id })) },
+                { items: [{ view: 'trash', icon: 'fa-trash', label: 'Trash' }] }
+            ];
+
+            elements.sidebar.innerHTML = sections.map(section => {
+                // Render storage info section
+                if (section.isStorage) {
+                    return `<div class="storage-info-container">
+                                <div class="storage-path-label"><i class="fas fa-database"></i> Storage Location</div>
+                                <div class="storage-path-name" title="${appState.storageHandle?.name || 'N/A'}">${appState.storageHandle?.name || 'N/A'}</div>
+                                <button id="changeStorageBtn" class="btn-link">Change location</button>
+                            </div>`;
+                }
+                // Render other sections (dashboard, important, trash, buckets)
+                return `<div class="sidebar-section">
+                            ${section.title ? `<h3>${section.title}</h3>` : ''}
+                            <div class="${section.isBucket ? 'buckets-list' : ''}">
+                                ${section.items.map(item => `
+                                    <div class="sidebar-item ${appState.currentView === item.view ? 'active' : ''}" data-view="${item.view}">
+                                        <div class="sidebar-item-main">
+                                            <i class="fas ${item.icon}"></i>
+                                            <span>${item.label}</span>
+                                        </div>
+                                        ${section.isBucket ? `
+                                            <div class="bucket-actions">
+                                                <button class="edit-bucket-btn" data-id="${item.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                                                <button class="delete-bucket-btn" data-id="${item.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                                            </div>` : ''}
+                                    </div>`).join('')}
+                            </div>
+                            ${section.isBucket ? `<div id="addBucketBtn" class="add-bucket-btn"><i class="fas fa-plus-circle"></i><span>New Bucket</span></div>` : ''}
+                        </div>`;
+            }).join('');
+        }
+
+        /**
+         * Renders the main content area, displaying documents or files based on the current view.
+         */
+        function renderContentArea() {
+            let title;
+            let itemsToDisplay = [];
+            const searchTerm = elements.searchInput.value.toLowerCase();
+
+            // Determine which items to display based on current view
+            if (appState.currentView === 'browse-folder') {
+                title = 'Files in Folder';
+                itemsToDisplay = appState.filesInFolder; // Display raw file system entries
+            } else {
+                // For other views, get managed documents
+                const docData = getDocsForCurrentView();
+                title = docData.title;
+                itemsToDisplay = docData.docs;
+
+                // Apply search filter for managed documents
+                if (searchTerm) {
+                    itemsToDisplay = itemsToDisplay.filter(d =>
+                        d.name.toLowerCase().includes(searchTerm) ||
+                        (d.tags && d.tags.some(t => t.toLowerCase().includes(searchTerm)))
+                    );
+                }
+                // Apply type filter for managed documents
+                if (appState.filter.type !== 'all') {
+                    itemsToDisplay = itemsToDisplay.filter(d => d.type.startsWith(appState.filter.type));
+                }
+
+                // Apply sorting for managed documents
+                itemsToDisplay.sort((a, b) => {
+                    let valA, valB;
+                    if (appState.sortBy === 'name') {
+                        valA = a.name.toLowerCase();
+                        valB = b.name.toLowerCase();
+                    } else if (appState.sortBy === 'date') {
+                        valA = new Date(a.date).getTime();
+                        valB = new Date(b.date).getTime();
+                    } else if (appState.sortBy === 'size') {
+                        // Convert "X MB" to number for sorting
+                        valA = parseFloat(a.size);
+                        valB = parseFloat(b.size);
+                    }
+                    if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            let headerActions;
+            if (appState.currentView === 'trash') {
+                headerActions = `<button class="btn btn-danger" id="emptyTrashBtn" ${appState.trash.length === 0 ? 'disabled' : ''}><i class="fas fa-times-circle"></i> Empty Trash</button>`;
+            } else if (appState.currentView === 'browse-folder') {
+                headerActions = ''; // No specific actions for this view initially
+            }
+            else {
+                headerActions = `
+                    <div class="view-toggle">
+                        <button id="viewGridBtn" class="${appState.layout === 'grid' ? 'active' : ''}"><i class="fas fa-th-large"></i></button>
+                        <button id="viewListBtn" class="${appState.layout === 'list' ? 'active' : ''}"><i class="fas fa-list"></i></button>
+                    </div>
+                    <div class="sort-controls">
+                        <select id="sortBySelect">
+                            <option value="date" ${appState.sortBy === 'date' ? 'selected' : ''}>Date</option>
+                            <option value="name" ${appState.sortBy === 'name' ? 'selected' : ''}>Name</option>
+                            <option value="size" ${appState.sortBy === 'size' ? 'selected' : ''}>Size</option>
+                        </select>
+                        <button id="sortDirectionBtn" title="Toggle Sort Direction">
+                            <i class="fas fa-arrow-${appState.sortDirection === 'asc' ? 'up' : 'down'}"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-outline" id="filterBtn"><i class="fas fa-filter"></i> Filter</button>
+                    <button class="btn btn-primary" id="uploadBtn"><i class="fas fa-cloud-upload-alt"></i> Upload Files</button>`;
+            }
+
+
+            elements.contentArea.innerHTML = `
+                <div class="content-header"><h1>${title}</h1><div class="actions-bar">${headerActions}</div></div>
+                <div id="documentsView" class="${appState.layout === 'grid' ? 'documents-grid' : 'documents-list'}">
+                    ${itemsToDisplay.length > 0
+                    ? itemsToDisplay.map(item => {
+                        // Render based on whether it's a managed document or a raw file system entry
+                        if (item.isFileHandle || item.isDirectoryHandle) {
+                            return renderFileEntryCard(item); // For raw files/folders
+                        } else {
+                            return renderDocCard(item); // For managed documents
+                        }
+                    }).join('')
+                    : renderEmptyState()
+                }
+                </div>`;
+
+            // Re-attach event listeners for sort controls if they exist
+            const sortBySelect = document.getElementById('sortBySelect');
+            if (sortBySelect) {
+                sortBySelect.value = appState.sortBy; // Ensure correct selection after re-render
+                sortBySelect.addEventListener('change', handleGlobalClick);
+            }
+            const sortDirectionBtn = document.getElementById('sortDirectionBtn');
+            if (sortDirectionBtn) {
+                sortDirectionBtn.addEventListener('click', handleGlobalClick);
+            }
+
+            // Attach double-click listeners for PDF preview
+            document.querySelectorAll('.document-card').forEach(card => {
+                card.addEventListener('dblclick', async (e) => {
+                    // Prevent dblclick if target is an interactive element inside the card
+                    if (e.target.closest('button, input[type="checkbox"]')) {
+                        return;
+                    }
+                    const docId = card.dataset.id;
+                    const doc = appState.documents.find(d => d.id === docId);
+                    if (doc && doc.type === 'application/pdf') {
+                        try {
+                            const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                            const file = await fileHandle.getFile();
+                            const fileURL = URL.createObjectURL(file);
+                            window.open(fileURL, '_blank');
+                            // Revoke the object URL after a short delay to free up memory
+                            setTimeout(() => URL.revokeObjectURL(fileURL), 500);
+                        } catch (error) {
+                            showToast(`Could not open PDF: ${doc.name}.`, "error");
+                            console.error("Error opening PDF:", error);
+                        }
+                    }
+                });
+            });
+        }
+
+        /**
+         * Renders a document card for managed documents.
+         * @param {Object} doc - The document object from appState.documents or appState.trash.
+         * @returns {string} - HTML string for the document card.
+         */
+        function renderDocCard(doc) {
+            const isSelected = appState.selectedDocIds.has(doc.id);
+            const isTrashView = appState.currentView === 'trash';
+            const thumbnail = doc.thumbnail ? `<img src="${doc.thumbnail}" alt="${doc.name}">` : `<i class="fas fa-file-alt file-icon"></i>`;
+            const getBucketName = (bucketId) => appState.buckets.find(b => b.id === bucketId)?.name || 'Uncategorized';
+
+            return `
+                <div class="document-card ${isSelected ? 'selected' : ''}" data-id="${doc.id}">
+                    <div class="card-top">
+                        <div class="document-thumbnail">${thumbnail}</div>
+                        <div class="card-top-actions">
+                            <input type="checkbox" class="selection-checkbox" ${isSelected ? 'checked' : ''} >
+                             <button class="important-toggle ${doc.isImportant ? 'is-important' : ''}" title="Mark as important" ${isTrashView ? 'disabled' : ''}>
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="document-info">
+                        <h3 title="${doc.name}">${doc.name}</h3>
+                        <div class="document-meta">
+                            <span>${doc.size}</span>
+                            <span>${new Date(doc.date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-labels">
+                                ${doc.bucket ? `<span class="card-label bucket">${getBucketName(doc.bucket)}</span>` : ''}
+                                ${doc.tags && doc.tags.length > 0 ? `<span class="card-label tag">${doc.tags[0]}</span>` : ''}
+                                ${doc.tags && doc.tags.length > 1 ? `<span class="card-label tag">+${doc.tags.length - 1}</span>` : ''}
+                            </div>
+                            <div class="card-actions">
+                                <button class="preview-btn" title="Preview"><i class="fas fa-eye"></i></button> <!-- New Preview Button -->
+                                <button class="edit-btn" title="Edit" ${isTrashView ? 'disabled' : ''}><i class="fas fa-edit"></i></button>
+                                <button class="download-btn" title="Download"><i class="fas fa-download"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        /**
+         * Renders a card for raw file system entries (files or directories)
+         * found directly in the selected storage folder.
+         * @param {Object} entry - An object representing a FileSystemFileHandle or FileSystemDirectoryHandle.
+         * @returns {string} HTML string for the file entry card.
+         */
+        function renderFileEntryCard(entry) {
+            // Determine if the file is already managed by DocuMint
+            const isManaged = appState.documents.some(d => d.name === entry.name) || appState.trash.some(d => d.name === entry.name);
+            const icon = entry.isFileHandle ? 'fa-file-alt' : 'fa-folder'; // Differentiate file and folder icons
+            const typeLabel = entry.isFileHandle ? (entry.type || 'File') : 'Folder';
+            const size = entry.size ? (entry.size / 1024 / 1024).toFixed(2) + ' MB' : '';
+            const lastModified = entry.lastModified ? new Date(entry.lastModified).toLocaleDateString() : '';
+
+            // Use a temporary ID for untracked files for selection purposes
+            const tempId = `fs-${entry.name}`;
+            const isSelected = appState.selectedDocIds.has(tempId);
+
+            return `
+                <div class="document-card ${isSelected ? 'selected' : ''}" data-id="${tempId}">
+                    <div class="card-top">
+                        <div class="document-thumbnail">
+                            <i class="fas ${icon} file-icon"></i>
+                        </div>
+                        <div class="card-top-actions">
+                            ${entry.isFileHandle && !isManaged ? `<input type="checkbox" class="selection-checkbox" ${isSelected ? 'checked' : ''}>` : ''}
+                        </div>
+                    </div>
+                    <div class="document-info">
+                        <h3 title="${entry.name}">${entry.name}</h3>
+                        <div class="document-meta">
+                            <span>${typeLabel}</span>
+                            ${size ? `<span>${size}</span>` : ''}
+                            ${lastModified ? `<span>${lastModified}</span>` : ''}
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-labels">
+                                <span class="card-label">${isManaged ? 'Managed' : 'Untracked'}</span>
+                            </div>
+                            <div class="card-actions">
+                                ${entry.isFileHandle && !isManaged ? `<button class="btn import-file-btn" data-id="${tempId}" data-path="${entry.name}" title="Import"><i class="fas fa-plus"></i></button>` : ''}
+                                ${entry.isFileHandle ? `<button class="download-btn" data-id="${tempId}" title="Download"><i class="fas fa-download"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        /**
+         * Renders the selection bar at the bottom of the screen,
+         * showing selected item count and bulk actions.
+         */
+        function renderSelectionBar() {
+            const count = appState.selectedDocIds.size;
+            if (count === 0) {
+                elements.selectionBar.classList.remove('active');
+                return;
+            }
+
+            const isTrashView = appState.currentView === 'trash';
+            const isBrowseFolderView = appState.currentView === 'browse-folder';
+
+            let actions = '';
+            if (isTrashView) {
+                actions = `
+                    <button class="btn btn-outline" id="selectionRestoreBtn"><i class="fas fa-undo"></i> Restore</button>
+                    <button class="btn btn-danger" id="selectionPermDeleteBtn"><i class="fas fa-trash-alt"></i> Delete Forever</button>`;
+            } else if (isBrowseFolderView) {
+                // For browse folder, allow bulk import if not already managed
+                const selectedFileHandles = Array.from(appState.selectedDocIds)
+                    .map(id => appState.filesInFolder.find(f => `fs-${f.name}` === id))
+                    .filter(entry => entry && entry.isFileHandle && !appState.documents.some(d => d.name === entry.name) && !appState.trash.some(d => d.name === entry.name));
+
+                if (selectedFileHandles.length > 0) {
+                    actions = `<button class="btn btn-primary" id="selectionImportBtn"><i class="fas fa-plus"></i> Import Selected</button>`;
+                    // Attach event listener for bulk import (needs to be done dynamically if element re-created)
+                    // For now, let's keep it simple and just show single import button, or delegate to global click handler
+                    // Adding this to handleGlobalClick: '#selectionImportBtn': handleBulkImport
+                }
+                actions += `<button class="btn" id="selectionDownloadBtn"><i class="fas fa-download"></i> Download</button>`;
+
+            } else {
+                actions = `
+                    <button class="btn" id="selectionDownloadBtn"><i class="fas fa-download"></i> Download</button>
+                    <button class="btn" id="selectionCombineBtn"><i class="fas fa-file-pdf"></i> Combine PDF</button>
+                    <button class="btn" id="selectionCompressPdfBtn"><i class="fas fa-compress-alt"></i> Compress PDF</button>
+                    <button class="btn" id="selectionCompressBtn"><i class="fas fa-file-archive"></i> Compress (ZIP)</button>
+                    <button class="btn btn-danger" id="selectionDeleteBtn"><i class="fas fa-trash-alt"></i> Delete</button>`;
+            }
+
+            elements.selectionBar.innerHTML = `<div class="selection-info">${count} item${count > 1 ? 's' : ''} selected</div><div class="selection-actions">${actions}</div>`;
+            elements.selectionBar.classList.add('active');
+
+            // Attach event listener for bulk import if present
+            const selectionImportBtn = document.getElementById('selectionImportBtn');
+            if (selectionImportBtn) {
+                selectionImportBtn.addEventListener('click', handleBulkImport);
+            }
+        }
+
+        /**
+         * Renders an empty state message when no documents are found for the current view.
+         * @returns {string} - HTML string for the empty state.
+         */
+        function renderEmptyState() {
+            const messages = {
+                dashboard: { icon: 'fa-file-alt', title: 'No documents yet', text: 'Click "Upload Files" to get started.' },
+                important: { icon: 'fa-star', title: 'No important documents', text: 'Click the star icon on a file to mark it as important.' },
+                trash: { icon: 'fa-trash-alt', title: 'Trash is empty', text: 'Deleted files will appear here.' },
+                bucket: { icon: 'fa-folder-open', title: 'This bucket is empty', text: 'Upload files to this bucket or move existing ones here.' },
+                search: { icon: 'fa-search', title: 'No results found', text: 'Try a different search term.' },
+                'browse-folder': { icon: 'fa-folder-open', title: 'Folder is empty', text: 'No files or subfolders found in the selected location.' }
+            };
+            const viewType = appState.currentView.startsWith('bucket-') ? 'bucket' : (elements.searchInput.value ? 'search' : appState.currentView);
+            const msg = messages[viewType] || messages.dashboard;
+            return `<div class="empty-state"><i class="fas ${msg.icon}"></i><h2>${msg.title}</h2><p>${msg.text}</p></div>`;
+        }
+
+        /**
+         * Changes the current active view of the application.
+         * @param {string} newView - The new view to switch to.
+         */
+        function changeView(newView) {
+            appState.currentView = newView;
+            clearSelection(); // Clear selection when changing view
+            renderAll(); // Re-render all UI components
+        }
+
+        /**
+         * Retrieves the documents or files relevant to the current view.
+         * @returns {Object} An object containing the title and the array of items to display.
+         */
+        function getDocsForCurrentView() {
+            const { currentView, documents, trash, buckets } = appState;
+            if (currentView === 'dashboard') return { title: 'Dashboard', docs: documents };
+            if (currentView === 'important') return { title: 'Important', docs: documents.filter(d => d.isImportant) };
+            if (currentView === 'trash') return { title: 'Trash', docs: trash };
+            if (currentView.startsWith('bucket-')) {
+                const bucketId = currentView.replace('bucket-', '');
+                const bucket = buckets.find(b => b.id === bucketId);
+                return { title: bucket ? bucket.name : 'Bucket', docs: documents.filter(d => d.bucket === bucketId) };
+            }
+            // This case is handled directly in renderContentArea for now, as it fetches live data
+            // if (currentView === 'browse-folder') return { title: 'Files in Folder', docs: appState.filesInFolder }; 
+            return { title: 'Dashboard', docs: documents };
+        }
+
+        /**
+         * Toggles the selection status of a document.
+         * @param {string} docId - The ID of the document to toggle.
+         * @param {boolean} isSelected - Whether the document is selected or not.
+         */
+        function toggleSelection(docId, isSelected) {
+            if (isSelected) appState.selectedDocIds.add(docId);
+            else appState.selectedDocIds.delete(docId);
+            renderContentArea(); // Re-render to update checkbox states
+            renderSelectionBar(); // Re-render selection bar
+        }
+
+        /**
+         * Clears all current document selections.
+         */
+        function clearSelection() {
+            appState.selectedDocIds.clear();
+            renderContentArea();
+            renderSelectionBar();
+        }
+
+        /**
+         * Loads metadata and file system entries from the selected storage location.
+         */
+        async function loadDataFromStorage() {
+            if (!appState.storageHandle) return;
+            try {
+                // Load DocuMint's metadata file
+                const metaFileHandle = await appState.storageHandle.getFileHandle('DocuMint.meta.json').catch(() => null);
+                if (metaFileHandle) {
+                    const file = await metaFileHandle.getFile();
+                    const metadata = JSON.parse(await file.text());
+                    appState.documents = metadata.documents || [];
+                    appState.buckets = metadata.buckets || appState.buckets;
+                    appState.trash = metadata.trash || [];
+                } else {
+                    // If no metadata file, initialize with empty arrays
+                    appState.documents = [];
+                    appState.trash = [];
+                }
+
+                // Populate appState.filesInFolder with all entries from the selected folder
+                appState.filesInFolder = [];
+                for await (const [name, handle] of appState.storageHandle.entries()) {
+                    let entry = { name, handle };
+                    if (handle.kind === 'file') {
+                        entry.isFileHandle = true;
+                        // For files, try to get more info like size and last modified
+                        try {
+                            const file = await handle.getFile();
+                            entry.size = file.size;
+                            entry.lastModified = file.lastModified;
+                            entry.type = file.type;
+                        } catch (e) {
+                            console.warn(`Could not get file info for ${name}:`, e);
+                        }
+                    } else if (handle.kind === 'directory') {
+                        entry.isDirectoryHandle = true;
+                    }
+                    appState.filesInFolder.push(entry);
+                }
+
+                await generateThumbnails(); // Generate thumbnails for image documents
+                renderAll(); // Render the UI
+                showToast("Documents loaded successfully", "success");
+            } catch (error) {
+                console.error("Error loading data:", error);
+                showToast("Failed to load metadata or access folder contents.", "error");
+            }
+        }
+
+        /**
+         * Saves the current application metadata (documents, buckets, trash)
+         * to the 'DocuMint.meta.json' file in the storage location.
+         */
+        async function saveMetadata() {
+            if (!appState.storageHandle) return;
+            try {
+                // Exclude thumbnail data from saving as it's generated on load
+                const dataToSave = { buckets: appState.buckets, trash: appState.trash, documents: appState.documents.map(({ thumbnail, ...doc }) => doc) };
+                const fileHandle = await appState.storageHandle.getFileHandle('DocuMint.meta.json', { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(dataToSave, null, 2));
+                await writable.close();
+            } catch (error) {
+                showToast("Could not save changes to storage.", "error");
+                console.error("Error saving metadata:", error);
+            }
+        }
+
+        /**
+         * Generates temporary URLs for image document thumbnails.
+         */
+        async function generateThumbnails() {
+            // Iterate over both documents and trash to generate thumbnails
+            for (const doc of [...appState.documents, ...appState.trash]) {
+                if (doc.type.startsWith('image/') && !doc.thumbnail) {
+                    try {
+                        const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                        const file = await fileHandle.getFile();
+                        // Create a blob URL for the image
+                        doc.thumbnail = URL.createObjectURL(file);
+                    } catch (e) { console.warn(`Could not find file for thumbnail: ${doc.name}`); }
+                }
+            }
+        }
+
+        /**
+         * Toggles the 'isImportant' status of a document.
+         * @param {string} docId - The ID of the document to toggle.
+         */
+        async function toggleImportant(docId) {
+            const doc = appState.documents.find(d => d.id === docId);
+            if (doc) {
+                doc.isImportant = !doc.isImportant;
+                await saveMetadata(); // Save changes to metadata
+                renderContentArea(); // Re-render content area to reflect change
+                showToast(doc.isImportant ? `Marked as important.` : `Removed from important.`, "success");
+            }
+        }
+
+        /**
+         * Moves selected documents from the main documents list to trash.
+         */
+        async function deleteSelected() {
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length === 0) return;
+            const docsToMove = [];
+            // Filter out selected documents from the main list and add to trash
+            appState.documents = appState.documents.filter(doc => {
+                if (ids.includes(doc.id)) { docsToMove.push(doc); return false; }
+                return true;
+            });
+            appState.trash.push(...docsToMove);
+            await saveMetadata();
+            showToast(`${docsToMove.length} item(s) moved to trash.`, "success");
+            clearSelection(); // Clear selection after action
+        }
+
+        /**
+         * Restores selected documents from trash back to the main documents list.
+         */
+        async function restoreSelected() {
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length === 0) return;
+            const docsToRestore = [];
+            // Filter out selected documents from trash and add back to main list
+            appState.trash = appState.trash.filter(doc => {
+                if (ids.includes(doc.id)) { docsToRestore.push(doc); return false; }
+                return true;
+            });
+            appState.documents.push(...docsToRestore);
+            await saveMetadata();
+            showToast(`${docsToRestore.length} item(s) restored.`, "success");
+            clearSelection();
+        }
+
+        /**
+         * Permanently deletes selected documents from trash and the file system.
+         */
+        async function permanentlyDeleteSelected() {
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length === 0) return;
+            // Use a custom modal for confirmation instead of browser's confirm()
+            if (!(await showConfirmModal(`Permanently delete ${ids.length} item(s)? This action cannot be undone.`))) return;
+
+            for (const id of ids) {
+                const doc = appState.trash.find(d => d.id === id);
+                if (doc) {
+                    try {
+                        // Attempt to remove the file from the underlying file system
+                        await appState.storageHandle.removeEntry(doc.name);
+                    } catch (e) {
+                        console.error(`Could not delete file ${doc.name} from storage:`, e);
+                        showToast(`Failed to delete ${doc.name} from disk.`, "error");
+                    }
+                }
+            }
+            // Filter out permanently deleted documents from trash
+            appState.trash = appState.trash.filter(d => !ids.includes(d.id));
+            await saveMetadata();
+            showToast(`${ids.length} item(s) permanently deleted.`, "success");
+            clearSelection();
+        }
+
+        /**
+         * Empties all documents from the trash.
+         */
+        async function handleEmptyTrash() {
+            if (appState.trash.length === 0) return;
+            // Use a custom modal for confirmation
+            if (!(await showConfirmModal(`Permanently delete all ${appState.trash.length} items in the trash?`))) return;
+
+            for (const doc of appState.trash) {
+                try { await appState.storageHandle.removeEntry(doc.name); } catch (e) { console.error(`Could not delete file ${doc.name}`, e); }
+            }
+            appState.trash = []; // Clear trash array
+            await saveMetadata();
+            showToast('Trash has been emptied.', "success");
+            renderContentArea(); // Re-render to show empty trash
+        }
+
+        /**
+         * Deletes a bucket and uncategorizes its associated documents.
+         * @param {string} bucketId - The ID of the bucket to delete.
+         */
+        async function handleDeleteBucket(bucketId) {
+            const bucket = appState.buckets.find(b => b.id === bucketId);
+            if (!bucket) return;
+            // Use a custom modal for confirmation
+            if (!(await showConfirmModal(`Delete bucket "${bucket.name}"? Documents in this bucket will become uncategorized.`))) return;
+
+            // Unassign this bucket from any documents
+            appState.documents.forEach(doc => {
+                if (doc.bucket === bucketId) doc.bucket = '';
+            });
+            // Remove the bucket from the buckets list
+            appState.buckets = appState.buckets.filter(b => b.id !== bucketId);
+
+            // If the current view was the deleted bucket, switch to dashboard
+            if (appState.currentView === `bucket-${bucketId}`) {
+                changeView('dashboard');
+            } else {
+                renderAll(); // Otherwise, just re-render everything
+            }
+            await saveMetadata();
+            showToast(`Bucket "${bucket.name}" deleted.`, 'success');
+        }
+
+        /**
+         * Downloads a single file by its document ID.
+         * Handles both managed documents and raw files from `filesInFolder`.
+         * @param {string} itemId - The ID of the document or the temp ID of the file entry.
+         */
+        async function downloadFile(itemId) {
+            let doc;
+            let fileHandle;
+
+            // Check if it's a managed document first
+            doc = [...appState.documents, ...appState.trash].find(d => d.id === itemId);
+
+            if (doc) {
+                // It's a managed document, get its handle by name
+                try {
+                    fileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                } catch (error) {
+                    console.error(`File handle for managed doc ${doc.name} not found:`, error);
+                    showToast(`Could not download "${doc.name}". File may be missing.`, "error");
+                    return;
+                }
+            } else if (itemId.startsWith('fs-')) {
+                // It's a raw file system entry, get its handle directly from filesInFolder
+                const entryName = itemId.substring(3); // Remove 'fs-' prefix
+                const entry = appState.filesInFolder.find(e => e.name === entryName && e.isFileHandle);
+                if (entry && entry.handle) {
+                    fileHandle = entry.handle;
+                    doc = { name: entry.name }; // Create a minimal doc object for saveAs
+                }
+            }
+
+            if (!doc || !fileHandle) {
+                return showToast("File not found or not accessible.", "error");
+            }
+
+            try {
+                const file = await fileHandle.getFile();
+                saveAs(file, doc.name); // Use FileSaver.js to save the file
+            } catch (error) {
+                showToast(`Could not download "${doc.name}". File access failed.`, "error");
+                console.error(`Download error for ${doc.name}:`, error);
+            }
+        }
+
+
+        /**
+         * Initiates download for all selected documents.
+         */
+        function downloadSelected() {
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length === 0) return;
+            ids.forEach(downloadFile); // Call downloadFile for each selected ID
+            clearSelection();
+        }
+
+        /**
+         * Displays the file upload modal.
+         */
+        function showUploadModal() {
+            elements.uploadModal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header"><h2>Upload Documents</h2><button class="close-modal">&times;</button></div>
+                    <div class="modal-body">
+                        <div class="upload-area" id="dropArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drag & Drop files here</h3>
+                            <p>or</p>
+                            <input type="file" id="fileInput" multiple style="display:none">
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Browse Files</button>
+                        </div>
+                        <div id="file-preview-list" style="margin-top:1rem;"></div>
+                        <div class="form-group">
+                            <label>Bucket (Optional)</label>
+                            <select id="uploadBucketSelect" class="form-control">
+                                <option value="">None</option>
+                                ${appState.buckets.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tags (comma-separated)</label>
+                            <input type="text" id="uploadTags" class="form-control" placeholder="e.g. invoice, urgent, 2024">
+                        </div>
+                        <div class="form-group">
+                            <label>Document Date</label>
+                            <input type="date" id="uploadDate" class="form-control" value="${new Date().toISOString().substring(0, 10)}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline cancel-btn">Cancel</button>
+                        <button class="btn btn-primary" id="confirmUploadBtn">Upload</button>
+                    </div>
+                </div>`;
+            elements.uploadModal.classList.add('active');
+
+            // Setup drag & drop event listeners
+            const dropArea = document.getElementById('dropArea');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evName => dropArea.addEventListener(evName, e => { e.preventDefault(); e.stopPropagation(); }, false));
+            ['dragenter', 'dragover'].forEach(evName => dropArea.addEventListener(evName, () => dropArea.classList.add('highlight'), false));
+            ['dragleave', 'drop'].forEach(evName => dropArea.addEventListener(evName, () => dropArea.classList.remove('highlight'), false));
+            dropArea.addEventListener('drop', (e) => { document.getElementById('fileInput').files = e.dataTransfer.files; handleFileSelection(); });
+            document.getElementById('fileInput').addEventListener('change', handleFileSelection);
+        }
+
+        /**
+         * Displays the document details editing modal.
+         * @param {string} docId - The ID of the document to edit.
+         */
+        function showDetailsModal(docId) {
+            const doc = appState.documents.find(d => d.id === docId);
+            if (!doc) return;
+            appState.editingDocId = docId; // Store the ID of the document being edited
+
+            elements.detailsModal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header"><h2>Edit Details</h2><button class="close-modal">&times;</button></div>
+                    <div class="modal-body">
+                        <div class="form-group"><label>File Name</label><input type="text" id="detailsFileName" class="form-control" value="${doc.name}"></div>
+                        <div class="form-group"><label>Bucket</label><select id="detailsBucketSelect" class="form-control"><option value="">None</option>${appState.buckets.map(b => `<option value="${b.id}" ${doc.bucket === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}</select></div>
+                        <div class="form-group"><label>Tags (comma-separated)</label><input type="text" id="detailsTags" class="form-control" value="${doc.tags?.join(', ') || ''}"></div>
+                        <div class="form-group"><label>Document Date</label><input type="date" id="detailsDate" class="form-control" value="${new Date(doc.date).toISOString().substring(0, 10)}"></div>
+                        <div class="form-group"><label>Bill Amount (Optional)</label><div class="bill-amount-group"><input type="number" id="detailsBillAmount" class="form-control" placeholder="e.g., 125.50" value="${doc.billAmount || ''}"><select id="detailsCurrency" class="currency-selector">${['USD', 'EUR', 'GBP', 'INR', 'JPY'].map(c => `<option value="${c}" ${doc.currency === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-outline cancel-btn">Cancel</button><button class="btn btn-primary" id="saveDetailsBtn">Save Changes</button></div>
+                </div>`;
+            elements.detailsModal.classList.add('active');
+        }
+
+        /**
+         * Displays the document preview modal.
+         * @param {string} docId - The ID of the document to preview.
+         */
+        function showPreviewModal(docId) {
+            const doc = appState.documents.find(d => d.id === docId);
+            if (!doc) return;
+
+            const getBucketName = (bucketId) => appState.buckets.find(b => b.id === bucketId)?.name || 'N/A';
+
+            elements.previewModal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header"><h2>Document Details: ${doc.name}</h2><button class="close-modal">&times;</button></div>
+                    <div class="modal-body">
+                        <div class="detail-item"><label>File Name:</label><span>${doc.name || 'N/A'}</span></div>
+                        <div class="detail-item"><label>File Type:</label><span>${doc.type || 'N/A'}</span></div>
+                        <div class="detail-item"><label>File Size:</label><span>${doc.size || 'N/A'}</span></div>
+                        <div class="detail-item"><label>Document Date:</label><span>${doc.date ? new Date(doc.date).toLocaleDateString() : 'N/A'}</span></div>
+                        <div class="detail-item"><label>Bucket:</label><span>${getBucketName(doc.bucket)}</span></div>
+                        <div class="detail-item"><label>Tags:</label><span>${doc.tags && doc.tags.length > 0 ? doc.tags.join(', ') : 'N/A'}</span></div>
+                        <div class="detail-item"><label>Bill Amount:</label><span>${doc.billAmount ? `${doc.currency || ''} ${doc.billAmount}` : 'N/A'}</span></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline cancel-btn">Close</button>
+                    </div>
+                </div>`;
+            elements.previewModal.classList.add('active');
+        }
+
+        /**
+         * Displays the bucket creation/editing modal.
+         * @param {string} [bucketId=null] - The ID of the bucket to edit, or null for a new bucket.
+         */
+        function showBucketModal(bucketId = null) {
+            appState.editingBucketId = bucketId;
+            const bucket = bucketId ? appState.buckets.find(b => b.id === bucketId) : null;
+            elements.bucketModal.innerHTML = `
+                 <div class="modal" style="max-width:400px">
+                    <div class="modal-header"><h2>${bucket ? 'Edit' : 'Create'} Bucket</h2><button class="close-modal">&times;</button></div>
+                    <div class="modal-body"><div class="form-group"><label>Bucket Name</label><input type="text" id="bucketNameInput" class="form-control" value="${bucket?.name || ''}" placeholder="e.g., Receipts 2024"></div></div>
+                    <div class="modal-footer"><button class="btn btn-outline cancel-btn">Cancel</button><button class="btn btn-primary" id="saveBucketBtn">Save</button></div>
+                </div>`;
+            elements.bucketModal.classList.add('active');
+        }
+
+        /**
+         * Closes all active modals and resets editing states.
+         */
+        function closeAllModals() {
+            appState.editingDocId = null;
+            appState.editingBucketId = null;
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+
+        /**
+         * Displays a toast notification message.
+         * @param {string} message - The message to display.
+         * @param {string} [type="success"] - The type of toast (e.g., "success", "error").
+         */
+        function showToast(message, type = "success") {
+            elements.toast.textContent = message;
+            elements.toast.className = `toast show ${type}`;
+            // Hide the toast after 3 seconds
+            setTimeout(() => { elements.toast.className = "toast"; }, 3000);
+        }
+
+        /**
+         * Shows a custom confirmation modal and returns a Promise that resolves
+         * to true if confirmed, false otherwise.
+         * @param {string} message - The message to display in the confirmation dialog.
+         * @returns {Promise<boolean>}
+         */
+        function showConfirmModal(message) {
+            return new Promise(resolve => {
+                const modalHtml = `
+                    <div class="modal">
+                        <div class="modal-header"><h2>Confirm Action</h2><button class="close-modal" id="confirmCancelBtn">&times;</button></div>
+                        <div class="modal-body"><p>${message}</p></div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline" id="confirmCancelBtn">Cancel</button>
+                            <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+                        </div>
+                    </div>
+                `;
+                const confirmModalOverlay = document.createElement('div');
+                confirmModalOverlay.classList.add('modal-overlay');
+                confirmModalOverlay.innerHTML = modalHtml;
+                document.body.appendChild(confirmModalOverlay);
+
+                confirmModalOverlay.classList.add('active');
+
+                document.getElementById('confirmOkBtn').onclick = () => {
+                    confirmModalOverlay.classList.remove('active');
+                    confirmModalOverlay.remove();
+                    resolve(true);
+                };
+                document.getElementById('confirmCancelBtn').onclick = () => {
+                    confirmModalOverlay.classList.remove('active');
+                    confirmModalOverlay.remove();
+                    resolve(false);
+                };
+            });
+        }
+
+
+        /**
+         * Prompts the user to select a storage location (directory)
+         * and persists the handle using IndexedDB.
+         */
+        async function selectStorageLocation() {
+            try {
+                // Use File System Access API to show directory picker
+                const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                await setStoredHandle(handle); // Store the handle in IndexedDB
+                appState.storageHandle = handle;
+                // Clear existing data and re-initialize with new folder
+                appState.documents = []; appState.trash = []; appState.filesInFolder = [];
+                elements.welcomeScreen.style.display = 'none';
+                elements.appContainer.style.display = 'flex';
+                await loadDataFromStorage(); // Load data from the newly selected folder
+            } catch (err) {
+                // Ignore AbortError if user cancels picker
+                if (err.name !== 'AbortError') showToast("Failed to get folder permission.", "error");
+            }
+        }
+
+        /**
+         * Opens or creates an IndexedDB database.
+         * @returns {Promise<IDBDatabase>} A promise that resolves with the IndexedDB database object.
+         */
+        function openDb() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('DocuMintDB', 1); // Database name and version
+                // This event is fired when the database is first created or when the version changes
+                request.onupgradeneeded = (event) => {
+                    // Create an object store to hold FileSystemDirectoryHandle
+                    event.target.result.createObjectStore('handles', { keyPath: 'id' });
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        /**
+         * Stores the FileSystemDirectoryHandle in IndexedDB.
+         * @param {FileSystemDirectoryHandle} handle - The directory handle to store.
+         */
+        async function setStoredHandle(handle) {
+            const db = await openDb();
+            const tx = db.transaction('handles', 'readwrite');
+            await tx.objectStore('handles').put({ id: 'storageHandle', handle }); // Store with a fixed ID
+            await tx.done; // Wait for the transaction to complete
+        }
+
+        /**
+         * Retrieves the stored FileSystemDirectoryHandle from IndexedDB.
+         * @returns {Promise<FileSystemDirectoryHandle|null>} A promise that resolves with the stored handle or null.
+         */
+        async function getStoredHandle() {
+            const db = await openDb();
+            const handleRecord = await db.transaction('handles').objectStore('handles').get('storageHandle');
+            return handleRecord?.handle;
+        }
+
+        /**
+         * Verifies and requests permissions for a given directory handle.
+         * @param {FileSystemDirectoryHandle} handle - The directory handle to verify permissions for.
+         * @returns {Promise<boolean>} True if permissions are granted, false otherwise.
+         */
+        async function verifyPermission(handle) {
+            // Query current permission status
+            if (await handle.queryPermission({ mode: 'readwrite' }) === 'granted') return true;
+            // If not granted, request permission
+            if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') return true;
+            return false;
+        }
+
+        /**
+         * Displays the names of selected files in the upload modal's preview list.
+         */
+        function handleFileSelection() {
+            const files = document.getElementById('fileInput').files;
+            document.getElementById('file-preview-list').innerHTML = [...files].map(f => `<p style="font-size:0.9em; padding:0.2rem 0;">- ${f.name}</p>`).join('');
+        }
+
+        /**
+         * Handles the actual file upload process to the selected storage folder.
+         */
+        async function handleFileUpload() {
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) return showToast("No files selected.", "error");
+
+            const bucket = document.getElementById('uploadBucketSelect').value;
+            const tags = document.getElementById('uploadTags').value.split(',').map(t => t.trim()).filter(Boolean);
+            const date = document.getElementById('uploadDate').value;
+
+            showToast(`Uploading ${files.length} file(s)...`, 'success');
+            closeAllModals();
+
+            for (const file of files) {
+                try {
+                    // Get a FileSystemFileHandle for the new file, creating it if it doesn't exist
+                    const fileHandle = await appState.storageHandle.getFileHandle(file.name, { create: true });
+                    const writable = await fileHandle.createWritable(); // Create a writable stream
+                    await writable.write(file); // Write file data
+                    await writable.close(); // Close the stream
+
+                    // Add document metadata to appState
+                    appState.documents.push({
+                        id: 'id-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9), // Unique ID
+                        name: file.name,
+                        type: file.type,
+                        size: (file.size / 1024 / 1024).toFixed(2) + ' MB', // Size in MB
+                        date: date || new Date().toISOString(),
+                        bucket,
+                        tags,
+                        isImportant: false,
+                    });
+                } catch (error) {
+                    showToast(`Failed to upload ${file.name}.`, "error");
+                    console.error(`Upload error for ${file.name}:`, error);
+                }
+            }
+            await saveMetadata(); // Save updated metadata
+            await loadDataFromStorage(); // Reload data to update UI (includes new thumbnails)
+        }
+
+        /**
+         * Imports a file from the selected folder into DocuMint's managed documents.
+         * @param {string} tempId - The temporary ID of the file entry (e.g., 'fs-filename.pdf').
+         * @param {string} fileName - The name of the file to import.
+         */
+        async function importFile(tempId, fileName) {
+            const entry = appState.filesInFolder.find(e => `fs-${e.name}` === tempId && e.isFileHandle);
+
+            if (!entry || !entry.handle) {
+                return showToast("File not found for import.", "error");
+            }
+
+            // Check if it's already managed to prevent duplicates
+            const isAlreadyManaged = appState.documents.some(d => d.name === fileName) || appState.trash.some(d => d.name === fileName);
+            if (isAlreadyManaged) {
+                return showToast(`"${fileName}" is already managed by DocuMint.`, "warning");
+                // Do not proceed with import if already managed
+            }
+
+            try {
+                const file = await entry.handle.getFile(); // Get the actual File object from the handle
+
+                // Add document metadata to appState, similar to upload
+                appState.documents.push({
+                    id: 'id-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                    name: file.name,
+                    type: file.type,
+                    size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                    date: new Date().toISOString(), // Use current date for import date
+                    bucket: '', // No bucket by default on import
+                    tags: [],   // No tags by default on import
+                    isImportant: false,
+                });
+
+                await saveMetadata();
+                await loadDataFromStorage(); // Reload data to update UI
+                showToast(`"${fileName}" imported successfully!`, "success");
+            } catch (error) {
+                showToast(`Failed to import "${fileName}".`, "error");
+                console.error(`Import error for ${fileName}:`, error);
+            }
+        }
+
+
+        /**
+         * Handles saving changes made in the document details modal.
+         */
+        async function handleSaveDetails() {
+            if (!appState.editingDocId) return;
+            const doc = appState.documents.find(d => d.id === appState.editingDocId);
+            if (!doc) return;
+
+            const newName = document.getElementById('detailsFileName').value;
+            doc.bucket = document.getElementById('detailsBucketSelect').value;
+            doc.tags = document.getElementById('detailsTags').value.split(',').map(t => t.trim()).filter(Boolean);
+            doc.date = new Date(document.getElementById('detailsDate').value).toISOString();
+            doc.billAmount = document.getElementById('detailsBillAmount').value;
+            doc.currency = document.getElementById('detailsCurrency').value;
+
+            // Handle file rename if the name has changed
+            if (newName !== doc.name) {
+                try {
+                    // Get the old file handle and its data
+                    const oldFileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                    const fileData = await oldFileHandle.getFile();
+                    // Create a new file with the new name
+                    const newFileHandle = await appState.storageHandle.getFileHandle(newName, { create: true });
+                    const writable = await newFileHandle.createWritable();
+                    await writable.write(fileData);
+                    await writable.close();
+                    // Remove the old file
+                    await appState.storageHandle.removeEntry(doc.name);
+                    doc.name = newName; // Update document name in state
+                } catch (error) {
+                    showToast("File rename failed. Name might be in use or permissions issue.", "error");
+                    console.error("Rename error:", error);
+                    return;
+                }
+            }
+            await saveMetadata();
+            showToast("Changes saved successfully.", "success");
+            closeAllModals();
+            renderContentArea(); // Re-render to reflect changes
+        }
+
+        /**
+         * Handles saving (creating or updating) a bucket from the bucket modal.
+         */
+        async function handleSaveBucket() {
+            const name = document.getElementById('bucketNameInput').value.trim();
+            if (!name) return showToast("Bucket name cannot be empty.", "error");
+
+            if (appState.editingBucketId) {
+                // Editing existing bucket
+                const bucket = appState.buckets.find(b => b.id === appState.editingBucketId);
+                if (bucket) bucket.name = name;
+            } else {
+                // Creating new bucket
+                appState.buckets.push({ id: 'b-' + Date.now(), name });
+            }
+            await saveMetadata();
+            showToast(`Bucket "${name}" saved.`, "success");
+            closeAllModals();
+            renderSidebar(); // Re-render sidebar to show updated/new bucket
+        }
+
+        /**
+         * Compresses selected documents into a single ZIP archive.
+         */
+        async function compressSelectedToZip() {
+            const ids = Array.from(appState.selectedDocIds);
+            if (ids.length === 0) return;
+            showToast("Creating ZIP archive...", "success");
+
+            const zip = new JSZip();
+            for (const id of ids) {
+                const doc = appState.documents.find(d => d.id === id);
+                if (doc) {
+                    try {
+                        const handle = await appState.storageHandle.getFileHandle(doc.name);
+                        const file = await handle.getFile();
+                        zip.file(doc.name, file); // Add file to ZIP archive
+                    } catch (error) { console.warn(`Could not add ${doc.name} to zip:`, error); }
+                }
+            }
+
+            // Generate the ZIP file as a blob and save it
+            const content = await zip.generateAsync({ type: "blob" });
+            saveAs(content, `DocuMint-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
+            showToast("ZIP archive created and downloaded.", "success");
+            clearSelection();
+        }
+
+        /**
+         * Combines selected PDF documents into a single PDF.
+         */
+        async function combineSelectedPDFs() {
+            const pdfIds = Array.from(appState.selectedDocIds).filter(id => {
+                const doc = appState.documents.find(d => d.id === id);
+                return doc && doc.type === 'application/pdf'; // Only include PDFs
+            });
+
+            if (pdfIds.length < 2) {
+                return showToast("Select at least two PDF files to combine.", "error");
+            }
+
+            showToast("Combining PDFs...", "success");
+            try {
+                const mergedPdf = await PDFDocument.create(); // Create a new empty PDF document
+                for (const id of pdfIds) {
+                    const doc = appState.documents.find(d => d.id === id);
+                    const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                    const file = await fileHandle.getFile();
+                    const pdfBytes = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(pdfBytes); // Load each selected PDF
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices()); // Copy all pages
+                    copiedPages.forEach(page => mergedPdf.addPage(page)); // Add pages to the new PDF
+                }
+                const mergedPdfBytes = await mergedPdf.save(); // Save the combined PDF
+                saveAs(new Blob([mergedPdfBytes], { type: 'application/pdf' }), `Combined-${Date.now()}.pdf`);
+                showToast("PDFs combined successfully!", "success");
+            } catch (e) {
+                showToast("Failed to combine PDFs.", "error");
+                console.error("Combine PDF error:", e);
+            } finally {
+                clearSelection();
+            }
+        }
+
+        /**
+         * Compresses selected PDF documents individually.
+         */
+        async function compressSelectedPDFs() {
+            const pdfIds = Array.from(appState.selectedDocIds).filter(id => {
+                const doc = appState.documents.find(d => d.id === id);
+                return doc && doc.type === 'application/pdf'; // Only include PDFs
+            });
+
+            if (pdfIds.length === 0) {
+                return showToast("No PDF files selected to compress.", "error");
+            }
+
+            showToast(`Compressing ${pdfIds.length} PDF(s)...`, "success");
+            try {
+                for (const id of pdfIds) {
+                    const doc = appState.documents.find(d => d.id === id);
+                    const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
+                    const file = await fileHandle.getFile();
+                    const pdfBytes = await file.arrayBuffer();
+
+                    // Load and re-save the PDF. pdf-lib optimizes the structure on save.
+                    // Using useObjectStreams: true is a key part of PDF compression.
+                    const pdf = await PDFDocument.load(pdfBytes);
+                    const compressedPdfBytes = await pdf.save({ useObjectStreams: true });
+
+                    const originalName = doc.name.endsWith('.pdf') ? doc.name.slice(0, -4) : doc.name;
+                    saveAs(new Blob([compressedPdfBytes], { type: 'application/pdf' }), `${originalName}-compressed.pdf`);
+                }
+                showToast("PDFs compressed and downloaded.", "success");
+            } catch (e) {
+                showToast("Failed to compress PDFs.", "error");
+                console.error("Compress PDF error:", e);
+            } finally {
+                clearSelection();
+            }
+        }
+
+        /**
+         * Handles bulk import of selected untracked files from the 'Files in Folder' view.
+         */
+        async function handleBulkImport() {
+            const idsToImport = Array.from(appState.selectedDocIds);
+            if (idsToImport.length === 0) return showToast("No files selected to import.", "error");
+
+            showToast(`Importing ${idsToImport.length} file(s)...`, 'success');
+            let importedCount = 0;
+
+            for (const tempId of idsToImport) {
+                const entryName = tempId.substring(3); // Extract original file name
+                const entry = appState.filesInFolder.find(e => e.name === entryName && e.isFileHandle);
+
+                if (entry && entry.handle) {
+                    // Check if already managed to prevent re-importing
+                    const isAlreadyManaged = appState.documents.some(d => d.name === entry.name) || appState.trash.some(d => d.name === entry.name);
+                    if (isAlreadyManaged) {
+                        console.warn(`Skipping import for "${entry.name}" as it's already managed.`);
+                        continue;
+                    }
+
+                    try {
+                        const file = await entry.handle.getFile();
+                        appState.documents.push({
+                            id: 'id-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                            name: file.name,
+                            type: file.type,
+                            size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                            date: new Date().toISOString(),
+                            bucket: '',
+                            tags: [],
+                            isImportant: false,
+                        });
+                        importedCount++;
+                    } catch (error) {
+                        console.error(`Failed to import ${entry.name} during bulk import:`, error);
+                        showToast(`Failed to import ${entry.name}.`, "error");
+                    }
+                }
+            }
+
+            await saveMetadata();
+            await loadDataFromStorage(); // Refresh UI to show newly imported documents
+            showToast(`${importedCount} file(s) imported successfully!`, "success");
+            clearSelection();
+        }
+
+
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+
+</html>
