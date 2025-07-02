@@ -1460,6 +1460,7 @@
                 '#selectionRestoreBtn': restoreSelected,
                 '#selectionPermDeleteBtn': permanentlyDeleteSelected,
                 '.close-modal': closeAllModals,
+                '#filterBtn': showFilterModal,
                 '.cancel-btn': closeAllModals,
                 '#saveBucketBtn': handleSaveBucket,
                 '#saveDetailsBtn': handleSaveDetails,
@@ -1558,8 +1559,15 @@
                     );
                 }
                 // Apply type filter for managed documents
-                if (appState.filter.type !== 'all') {
-                    itemsToDisplay = itemsToDisplay.filter(d => d.type.startsWith(appState.filter.type));
+                // Apply type filter for managed documents
+                if (appState.filter.type && appState.filter.type !== 'all') {
+                    itemsToDisplay = itemsToDisplay.filter(d => d.name.toLowerCase().endsWith('.' + appState.filter.type));
+                }
+                // Apply tag filter for managed documents
+                if (appState.filter.tags && appState.filter.tags.length > 0) {
+                    itemsToDisplay = itemsToDisplay.filter(d =>
+                        d.tags && appState.filter.tags.every(tag => d.tags.includes(tag))
+                    );
                 }
 
                 // Apply sorting for managed documents
@@ -2338,6 +2346,61 @@
             });
         }
 
+        function showFilterModal() {
+            // Get unique file extensions and tags from documents
+            const fileExtensions = [...new Set(appState.documents
+                .map(d => d.name.includes('.') ? d.name.split('.').pop().toLowerCase() : '')
+                .filter(ext => ext)
+            )];
+            const allTags = [...new Set(appState.documents.flatMap(d => d.tags || []))];
+
+            // Current filter state
+            const currentType = appState.filter.type || 'all';
+            const currentTags = appState.filter.tags || [];
+
+            elements.uploadModal.innerHTML = `
+        <div class="modal" style="max-width:400px">
+            <div class="modal-header">
+                <h2>Filter Documents</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>File Type</label>
+                    <select id="filterTypeSelect" class="form-control">
+                        <option value="all">All</option>
+                        ${fileExtensions.map(ext => `<option value="${ext}" ${currentType === ext ? 'selected' : ''}>${ext.toUpperCase()}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tags</label>
+                    <div id="filterTagsList" style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                        ${allTags.map(tag => `
+                            <label style="display:flex;align-items:center;">
+                                <input type="checkbox" value="${tag}" ${currentTags.includes(tag) ? 'checked' : ''} style="margin-right:0.3rem;">
+                                ${tag}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="applyFilterBtn">Apply</button>
+            </div>
+        </div>
+    `;
+            elements.uploadModal.classList.add('active');
+
+            document.getElementById('applyFilterBtn').onclick = () => {
+                const type = document.getElementById('filterTypeSelect').value;
+                const tags = Array.from(document.querySelectorAll('#filterTagsList input[type="checkbox"]:checked')).map(cb => cb.value);
+                appState.filter.type = type;
+                appState.filter.tags = tags;
+                elements.uploadModal.classList.remove('active');
+                renderContentArea();
+            };
+        }
 
         /**
          * Prompts the user to select a storage location (directory)
