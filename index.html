@@ -184,7 +184,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 0.3rem 0.75rem 1rem;
+            /* Reduce right padding for tighter right alignment */
             border-radius: 8px;
             margin-bottom: 0.25rem;
             cursor: pointer;
@@ -196,6 +197,7 @@
         .sidebar-item-main {
             display: flex;
             align-items: center;
+            flex-shrink: 1;
         }
 
         .sidebar-item:hover,
@@ -210,10 +212,15 @@
         }
 
         .sidebar-item i {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-right: 1rem;
             width: 24px;
             text-align: center;
             font-size: 1.1rem;
+            padding: 0.75rem 0.5rem 0.75rem 1rem;
+            /* Reduce right padding */
         }
 
         .buckets-list {
@@ -223,7 +230,9 @@
 
         .bucket-actions {
             display: none;
-            gap: 8px;
+            gap: 12px;
+            align-items: center;
+            /* No margin-left:auto needed */
         }
 
         .sidebar-item:hover .bucket-actions {
@@ -234,9 +243,19 @@
             background: none;
             border: none;
             cursor: pointer;
-            padding: 2px;
+            padding: 1px;
+            /* Slightly more padding for a larger clickable area */
             color: #999;
-            font-size: 0.9rem;
+            font-size: 1.0rem;
+            /* Increase icon size */
+            display: flex;
+            align-items: left;
+            justify-content: center;
+        }
+
+        .bucket-actions button i {
+            font-size: 0.8em;
+            /* Ensure icon itself is larger */
         }
 
         .bucket-actions button:hover {
@@ -1372,26 +1391,22 @@
          * This improves performance by having fewer event listeners.
          * @param {Event} e - The click event object.
          */
+        // ...existing code...
         function handleGlobalClick(e) {
             const target = e.target;
             // Helper to find the closest ancestor element matching a selector
             const closest = (selector) => target.closest(selector);
 
-            const card = closest('.document-card');
-            const docId = card?.dataset.id;
-
-            // Close preview modal if clicking outside it
-            if (elements.previewModal.classList.contains('active') && !closest('.modal')) {
-                closeAllModals();
-                return; // Stop further propagation to prevent other actions
+            // --- FIX: Handle bucket edit/delete before sidebar view change ---
+            if (closest('.edit-bucket-btn')) {
+                showBucketModal(closest('.edit-bucket-btn').dataset.id);
+                e.stopPropagation();
+                return;
             }
-
-            // Close sidebar if clicking outside it (only on mobile when open)
-            if (elements.sidebar.classList.contains('open') && !closest('.sidebar') && !closest('.nav-toggle-btn') && window.innerWidth <= 768) {
-                toggleSidebar();
-                // We let the sidebarOverlay listener handle it, but this acts as a fallback for clicks not on overlay
-                // However, the `sidebarOverlay` listener handles this more cleanly. So this block might not be strictly needed if `sidebarOverlay` is always present
-                // and covers the whole screen. Keeping it simple, `sidebarOverlay` takes care of this.
+            if (closest('.delete-bucket-btn')) {
+                handleDeleteBucket(closest('.delete-bucket-btn').dataset.id);
+                e.stopPropagation();
+                return;
             }
 
             // Handle sidebar view changes
@@ -1402,15 +1417,23 @@
                 }
                 return;
             }
+
+            // Only try to use docId/card if they exist
+            let docId, card;
+            if (closest('.document-card')) {
+                card = closest('.document-card');
+                docId = card.dataset.id;
+            }
+
             // Handle document selection checkbox
-            if (target.classList.contains('selection-checkbox')) {
+            if (target.classList.contains('selection-checkbox') && docId) {
                 toggleSelection(docId, target.checked);
                 return;
             }
             // Handle clicking on a document card (toggles selection)
             if (card && !closest('.card-actions button, .important-toggle, .selection-checkbox, .import-file-btn, .preview-btn')) {
                 const cb = card.querySelector('.selection-checkbox');
-                if (cb) { // Do not check for disabled here, enable all checkboxes
+                if (cb) {
                     cb.checked = !cb.checked;
                     toggleSelection(docId, cb.checked);
                 }
@@ -1422,7 +1445,7 @@
                 '.important-toggle': () => toggleImportant(docId),
                 '.edit-btn': () => showDetailsModal(docId),
                 '.download-btn': () => downloadFile(docId),
-                '.preview-btn': () => showPreviewModal(docId), // Added preview button action
+                '.preview-btn': () => showPreviewModal(docId),
                 '#uploadBtn': showUploadModal,
                 '#addBucketBtn': () => showBucketModal(),
                 '.edit-bucket-btn': () => showBucketModal(closest('.edit-bucket-btn').dataset.id),
@@ -1443,15 +1466,7 @@
                 '#confirmUploadBtn': handleFileUpload,
                 '#viewGridBtn': () => { appState.layout = 'grid'; renderContentArea(); },
                 '#viewListBtn': () => { appState.layout = 'list'; renderContentArea(); },
-                '#sortBySelect': () => {
-                    appState.sortBy = target.value;
-                    renderContentArea();
-                },
-                '#sortDirectionBtn': () => {
-                    appState.sortDirection = appState.sortDirection === 'asc' ? 'desc' : 'asc';
-                    renderContentArea();
-                },
-                '.import-file-btn': () => importFile(docId, target.dataset.path), // path for untracked files
+                '.import-file-btn': () => importFile(docId, target.dataset.path),
             };
 
             // Execute the corresponding action if a matching element is clicked
@@ -1462,6 +1477,7 @@
                 }
             }
         }
+        // ...existing code...
 
         /**
          * Renders all major UI components (sidebar, content area, selection bar).
@@ -1612,12 +1628,18 @@
             // Re-attach event listeners for sort controls if they exist
             const sortBySelect = document.getElementById('sortBySelect');
             if (sortBySelect) {
-                sortBySelect.value = appState.sortBy; // Ensure correct selection after re-render
-                sortBySelect.addEventListener('change', handleGlobalClick);
+                sortBySelect.value = appState.sortBy;
+                sortBySelect.addEventListener('change', (e) => {
+                    appState.sortBy = e.target.value;
+                    renderContentArea();
+                });
             }
             const sortDirectionBtn = document.getElementById('sortDirectionBtn');
             if (sortDirectionBtn) {
-                sortDirectionBtn.addEventListener('click', handleGlobalClick);
+                sortDirectionBtn.onclick = () => {
+                    appState.sortDirection = appState.sortDirection === 'asc' ? 'desc' : 'asc';
+                    renderContentArea();
+                };
             }
 
             // Attach double-click listeners for PDF preview
@@ -1629,17 +1651,27 @@
                     }
                     const docId = card.dataset.id;
                     const doc = appState.documents.find(d => d.id === docId);
-                    if (doc && doc.type === 'application/pdf') {
+                    if (doc) {
                         try {
                             const fileHandle = await appState.storageHandle.getFileHandle(doc.name);
                             const file = await fileHandle.getFile();
-                            const fileURL = URL.createObjectURL(file);
-                            window.open(fileURL, '_blank');
-                            // Revoke the object URL after a short delay to free up memory
-                            setTimeout(() => URL.revokeObjectURL(fileURL), 500);
+                            // Allow browser-viewable types: PDF, images, text, etc.
+                            if (
+                                doc.type === 'application/pdf' ||
+                                doc.type.startsWith('image/') ||
+                                doc.type.startsWith('text/') ||
+                                doc.type === 'application/json' ||
+                                doc.type === 'application/xml'
+                            ) {
+                                const fileURL = URL.createObjectURL(file);
+                                window.open(fileURL, '_blank');
+                                setTimeout(() => URL.revokeObjectURL(fileURL), 5000);
+                            } else {
+                                showToast(`Preview not supported for this file type.`, "warning");
+                            }
                         } catch (error) {
-                            showToast(`Could not open PDF: ${doc.name}.`, "error");
-                            console.error("Error opening PDF:", error);
+                            showToast(`Could not open file: ${doc.name}.`, "error");
+                            console.error("Error opening file:", error);
                         }
                     }
                 });
@@ -2231,8 +2263,8 @@
             appState.editingBucketId = bucketId;
             const bucket = bucketId ? appState.buckets.find(b => b.id === bucketId) : null;
             elements.bucketModal.innerHTML = `
-                 <div class="modal" style="max-width:400px">
-                    <div class="modal-header"><h2>${bucket ? 'Edit' : 'Create'} Bucket</h2><button class="close-modal">&times;</button></div>
+                <div class="modal" style="max-width:400px">
+                    <div class="modal-header"><h2>${bucket ? 'Rename' : 'Create'} Bucket</h2><button class="close-modal">&times;</button></div>
                     <div class="modal-body"><div class="form-group"><label>Bucket Name</label><input type="text" id="bucketNameInput" class="form-control" value="${bucket?.name || ''}" placeholder="e.g., Receipts 2024"></div></div>
                     <div class="modal-footer"><button class="btn btn-outline cancel-btn">Cancel</button><button class="btn btn-primary" id="saveBucketBtn">Save</button></div>
                 </div>`;
@@ -2269,15 +2301,18 @@
         function showConfirmModal(message) {
             return new Promise(resolve => {
                 const modalHtml = `
-                    <div class="modal">
-                        <div class="modal-header"><h2>Confirm Action</h2><button class="close-modal" id="confirmCancelBtn">&times;</button></div>
-                        <div class="modal-body"><p>${message}</p></div>
-                        <div class="modal-footer">
-                            <button class="btn btn-outline" id="confirmCancelBtn">Cancel</button>
-                            <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
-                        </div>
-                    </div>
-                `;
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Confirm Action</h2>
+                    <button class="close-modal" id="confirmCloseBtn">&times;</button>
+                </div>
+                <div class="modal-body"><p>${message}</p></div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" id="confirmCancelBtn">Cancel</button>
+                    <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+                </div>
+            </div>
+        `;
                 const confirmModalOverlay = document.createElement('div');
                 confirmModalOverlay.classList.add('modal-overlay');
                 confirmModalOverlay.innerHTML = modalHtml;
@@ -2291,6 +2326,11 @@
                     resolve(true);
                 };
                 document.getElementById('confirmCancelBtn').onclick = () => {
+                    confirmModalOverlay.classList.remove('active');
+                    confirmModalOverlay.remove();
+                    resolve(false);
+                };
+                document.getElementById('confirmCloseBtn').onclick = () => {
                     confirmModalOverlay.classList.remove('active');
                     confirmModalOverlay.remove();
                     resolve(false);
