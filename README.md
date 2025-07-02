@@ -3,7 +3,7 @@
 **Your Personal Document Fortress - Client-Side Document Manager**  
 DocuMint is a browser-based document management system that organizes files locally using modern web APIs. No cloud services, no servers – just pure client-side document zen.
 
-![Demo](https://via.placeholder.com/800x400?text=DocuMint+UI+Screenshot)  
+![Demo](DocuMint.png)  
 *Example interface - actual UI may vary*
 
 ## ✨ Key Features
@@ -41,6 +41,6 @@ DocuMint is a browser-based document management system that organizes files loca
 
 ### Installation
 ```bash
-git clone https://github.com/yourusername/documint.git
+git clone https://github.com/codemaster001-yash/DocuMint.git
 cd documint
 # No build required - just open index.html!
