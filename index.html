@@ -1851,6 +1851,30 @@
                 </div>`;
         }
 
+        function enableEnterForPrimaryButton(modalOverlay) {
+            const modal = modalOverlay.querySelector('.modal');
+            if (!modal) return;
+            function handler(e) {
+                if (e.key === 'Enter') {
+                    const primaryBtn = modal.querySelector('.btn-primary:not(:disabled)');
+                    if (primaryBtn) {
+                        e.preventDefault();
+                        primaryBtn.click();
+                    }
+                }
+            }
+            modal.addEventListener('keydown', handler);
+            // Remove listener when modal closes
+            modalOverlay.addEventListener('transitionend', function cleanup() {
+                if (!modalOverlay.classList.contains('active')) {
+                    modal.removeEventListener('keydown', handler);
+                    modalOverlay.removeEventListener('transitionend', cleanup);
+                }
+            });
+            // Focus the first input for accessibility
+            const firstInput = modal.querySelector('input, select, textarea, button');
+            if (firstInput) firstInput.focus();
+        }
         /**
          * Renders the selection bar at the bottom of the screen,
          * showing selected item count and bulk actions.
@@ -2272,6 +2296,7 @@
                     </div>
                 </div>`;
             elements.uploadModal.classList.add('active');
+            enableEnterForPrimaryButton(elements.uploadModal);
 
             // Setup drag & drop event listeners
             const dropArea = document.getElementById('dropArea');
@@ -2304,6 +2329,7 @@
                     <div class="modal-footer"><button class="btn btn-outline cancel-btn">Cancel</button><button class="btn btn-primary" id="saveDetailsBtn">Save Changes</button></div>
                 </div>`;
             elements.detailsModal.classList.add('active');
+            enableEnterForPrimaryButton(elements.detailsModal);
         }
 
         /**
@@ -2333,6 +2359,7 @@
                     </div>
                 </div>`;
             elements.previewModal.classList.add('active');
+            enableEnterForPrimaryButton(elements.previewModal);
         }
 
 
@@ -2357,6 +2384,7 @@
                     <div class="modal-footer"><button class="btn btn-outline cancel-btn">Cancel</button><button class="btn btn-primary" id="saveBucketBtn">Save</button></div>
                 </div>`;
             elements.bucketModal.classList.add('active');
+            enableEnterForPrimaryButton(elements.bucketModal);
         }
 
         /**
@@ -2407,6 +2435,7 @@
                 document.body.appendChild(confirmModalOverlay);
 
                 confirmModalOverlay.classList.add('active');
+                enableEnterForPrimaryButton(confirmModalOverlay);
 
                 document.getElementById('confirmOkBtn').onclick = () => {
                     confirmModalOverlay.classList.remove('active');
